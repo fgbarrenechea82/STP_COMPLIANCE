@@ -1,0 +1,17 @@
+---
+- name: STP Check 
+  hosts: all
+  connection: network_cli
+  gather_facts: true
+  vars:
+    ansible_network_os: cisco.ios.ios
+    # ansible_network_cli_ssh_type: paramiko
+  
+  tasks:
+    - name: Version Check 
+      cisco.ios.ios_facts:
+        gather_subset: min
+
+    - name: Shor Version 
+      debug:
+        var: ansible_net_version

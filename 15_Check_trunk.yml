@@ -1,0 +1,37 @@
+# ---
+# - name: STP Check 
+#   hosts: all
+#   connection: network_cli
+#   gather_facts: no
+#   vars:
+#     ansible_network_os: cisco.ios.ios
+  
+  # tasks:
+    # THIS TASK BRING THE L2 INTERFACE
+    - name: L2 interfaces
+      cisco.ios.ios_l2_interfaces:
+        config:
+        state: gathered
+      register: data
+
+    # THIS TASK DO A LIST OF TRUNK INTERFACE
+    - name: Build a list of Trunk interfaces
+      vars:
+        current_interface: "{{ item.name }}"
+      # Set a list of interface on mode trunk
+      set_fact:
+        # Make a list of the interfaces (according the loop and when)
+        interfaces_mode_trunk: "{{ interfaces_mode_trunk | default([]) + [current_interface] }}"
+      loop: "{{ data.gathered }}"
+      when:
+        - item.mode is defined
+        - item.mode == "trunk"
+    
+    # DENEGATE THE COMMAND TO AVOID DISRUPTION ON THE TRUNK LINKs
+    - name: Check Port Fast configuration
+      ios_config:
+        lines:
+          - no spanning-tree portfast network
+        parents: "interface {{ item }}"
+      loop: "{{ interfaces_mode_trunk }}"
+      register: vlan
